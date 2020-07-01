@@ -14,6 +14,7 @@ Il faut recuperer depuis le fichier kml les données suivantes uniquement si Pla
 La creation des POJO a été effectuée avec xjc avec le bidings suivants :
 
 
+```
 
 <jaxb:bindings
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -22,7 +23,11 @@ La creation des POJO a été effectuée avec xjc avec le bidings suivants :
     <jaxb:globalBindings localScoping="toplevel"/>
 </jaxb:bindings>
 
+```
+
 sur
+
+```
 
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
@@ -136,5 +141,6 @@ sur
   </xs:element>
 </xs:schema>
 
+```
 
 et les inserer dasn DynamoDB Positions

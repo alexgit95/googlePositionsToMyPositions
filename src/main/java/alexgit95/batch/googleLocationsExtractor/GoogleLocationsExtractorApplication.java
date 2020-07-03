@@ -33,89 +33,76 @@ import alexgit95.batch.googleLocationsExtractor.services.DaoServices;
 
 @SpringBootApplication
 public class GoogleLocationsExtractorApplication {
-	
+
 	public static List<Point> doNoTrackList;
-	
+
 	@Value("${ignoreFilePath}")
 	public File ignoreFile;
-	
+
 	@Value("${sourceFolderPath}")
 	public File srcFolder;
 	@Autowired
 	private DaoServices daoServices;
-	
+
 	private Set<Date> existingDates = new TreeSet<Date>();
-	
+
 	private Logger logger = LoggerFactory.getLogger(GoogleLocationsExtractorApplication.class);
 
 	public static void main(String[] args) {
 		SpringApplication.run(GoogleLocationsExtractorApplication.class, args);
-		
-		
-		
+
 	}
-	
+
 	@Bean
 	public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
 		return args -> {
 			List<LocationsOutput> result = new LinkedList<LocationsOutput>();
-			
+
 			logger.info("Chargement des date existantes");
 			loadExistingPlace();
-			logger.info("Fin du chargement : "+existingDates.size()+" elements");
-			
-			Collection<File> listFiles = FileUtils.listFiles(srcFolder, new String[] {"json"}, true);
+			logger.info("Fin du chargement : " + existingDates.size() + " elements");
+
+			Collection<File> listFiles = FileUtils.listFiles(srcFolder, new String[] { "json" }, true);
 			for (File file : listFiles) {
 				processFile(file, result);
 			}
-			
+
 			logger.info("NB Ajout total : " + result.size());
-			for(int i=0;i<result.size();i++) {
-				logger.info("Sauvegarde "+i+"/"+result.size());
+			for (int i = 0; i < result.size(); i++) {
+				logger.debug("Sauvegarde " + i + "/" + result.size());
 				daoServices.save(result.get(i));
 			}
-			
+
 			logger.info("Sauvegarde effectuee");
+			logger.info("Fin du programme");
 		};
 	}
 
-
-	private  void processFile(final File src, List<LocationsOutput> result) {
+	private void processFile(final File src, List<LocationsOutput> result) {
 		try {
 
-			logger.debug("Lecture du fichier "+src.getAbsolutePath());
+			logger.debug("Lecture du fichier " + src.getAbsolutePath());
 			String fileContent = FileUtils.readFileToString(src, Charset.defaultCharset());
 			Gson gson = new Gson();
 			LocationsInput fromJson = gson.fromJson(fileContent, LocationsInput.class);
 			logger.debug("Fichier Chargé, nb ligne : " + fromJson.getTimelineObjects().size());
 			for (TimelineObject input : fromJson.getTimelineObjects()) {
-				if (input.getPlaceVisit() != null) {
-					if (input.getPlaceVisit().getLocation().getName() != null) {
-						LocationsOutput output = new LocationsOutput();
-						output.setAddress(input.getPlaceVisit().getLocation().getAddress().replaceAll("\\n", " "));
-						output.setName(input.getPlaceVisit().getLocation().getName());
-						output.setBegin(
-								new Date(Long.parseLong(input.getPlaceVisit().getDuration().getStartTimestampMs())));
-						output.setEnd(
-								new Date(Long.parseLong(input.getPlaceVisit().getDuration().getEndTimestampMs())));
+				if (input.getPlaceVisit() != null && input.getPlaceVisit().getLocation().getName() != null&&input.getPlaceVisit().getLocation().getLatitudeE7() != null) {
 
-						if(input.getPlaceVisit().getLocation().getLatitudeE7()==null||input.getPlaceVisit().getLocation().getLongitudeE7()==null) {
-							continue;
-						}
-						output.setLattitude(((double) input.getPlaceVisit().getLocation().getLatitudeE7() / 10000000));
-						output.setLongitude(((double) input.getPlaceVisit().getLocation().getLongitudeE7() / 10000000));
-						
-						Calendar cal = Calendar.getInstance();
-						cal.setTime(output.getBegin());
-						cal.add(Calendar.MINUTE, 30);
+					LocationsOutput output = outputBuilder(input);
+					
 
-						if (output.getEnd().after(cal.getTime())
-								&& !shouldBeIgnore(output.getLattitude(), output.getLongitude())&&!existingDates.contains(output.getBegin())) {
-							result.add(output);
-							
-						}
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(output.getBegin());
+					cal.add(Calendar.MINUTE, 30);
+
+					if (output.getEnd().after(cal.getTime())
+							&& !shouldBeIgnore(output.getLattitude(), output.getLongitude())
+							&& !existingDates.contains(output.getBegin())) {
+						result.add(output);
 
 					}
+
 				}
 
 			}
@@ -126,7 +113,20 @@ public class GoogleLocationsExtractorApplication {
 		}
 	}
 
-	public  boolean shouldBeIgnore(double lat, double longi) {
+	private LocationsOutput outputBuilder(TimelineObject input) {
+		LocationsOutput output = new LocationsOutput();
+		output.setAddress(input.getPlaceVisit().getLocation().getAddress().replaceAll("\\n", " "));
+		output.setName(input.getPlaceVisit().getLocation().getName());
+		output.setBegin(new Date(Long.parseLong(input.getPlaceVisit().getDuration().getStartTimestampMs())));
+		output.setEnd(new Date(Long.parseLong(input.getPlaceVisit().getDuration().getEndTimestampMs())));
+		output.setLattitude(((double) input.getPlaceVisit().getLocation().getLatitudeE7() / 10000000));
+		output.setLongitude(((double) input.getPlaceVisit().getLocation().getLongitudeE7() / 10000000));
+
+		return output;
+
+	}
+
+	public boolean shouldBeIgnore(double lat, double longi) {
 		final int distanceApprox = 500;
 		List<Point> doNotTrackList = getDoNotTrackList();
 		for (Point point : doNotTrackList) {
@@ -140,31 +140,31 @@ public class GoogleLocationsExtractorApplication {
 		return false;
 	}
 
-	public  List<Point> getDoNotTrackList() {
-		if(doNoTrackList==null) {
+	public List<Point> getDoNotTrackList() {
+		if (doNoTrackList == null) {
 			try {
 				logger.debug("Initialisation de la do not track list");
-				List<String> readLines = FileUtils.readLines(ignoreFile,Charset.defaultCharset());
-				doNoTrackList=new ArrayList<Point>();
+				List<String> readLines = FileUtils.readLines(ignoreFile, Charset.defaultCharset());
+				doNoTrackList = new ArrayList<Point>();
 				for (String line : readLines) {
 					String[] split = line.split(",");
-					Point toAdd=new Point();
-					int latE7 = (int)(Double.parseDouble(split[0])*10000000);
+					Point toAdd = new Point();
+					int latE7 = (int) (Double.parseDouble(split[0]) * 10000000);
 					toAdd.setLatE7(latE7);
-					int lngE7 = (int)(Double.parseDouble(split[1])*10000000);
+					int lngE7 = (int) (Double.parseDouble(split[1]) * 10000000);
 					toAdd.setLngE7(lngE7);
 					doNoTrackList.add(toAdd);
 				}
-			
+
 				return doNoTrackList;
 			} catch (IOException e) {
-				logger.error("Fichier ignore specifie : "+ignoreFile.getAbsolutePath(), e);
+				logger.error("Fichier ignore specifie : " + ignoreFile.getAbsolutePath(), e);
 				e.printStackTrace();
 				logger.info("Liste ignoree par defaut : vide");
-				doNoTrackList=new ArrayList<Point>();
+				doNoTrackList = new ArrayList<Point>();
 				return doNoTrackList;
 			}
-		}else {
+		} else {
 			return doNoTrackList;
 		}
 	}
@@ -184,15 +184,13 @@ public class GoogleLocationsExtractorApplication {
 	public void setDaoServices(DaoServices daoServices) {
 		this.daoServices = daoServices;
 	}
-	
+
 	private void loadExistingPlace() {
 		List<LocationsOutput> all = daoServices.getAll();
-		
+
 		for (LocationsOutput location : all) {
 			existingDates.add(location.getBegin());
 		}
 	}
-	
-	
 
 }

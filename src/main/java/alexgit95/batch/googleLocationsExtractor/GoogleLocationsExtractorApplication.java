@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -43,6 +45,8 @@ public class GoogleLocationsExtractorApplication {
 	private DaoServices daoServices;
 	
 	private Set<Date> existingDates = new TreeSet<Date>();
+	
+	private Logger logger = LoggerFactory.getLogger(GoogleLocationsExtractorApplication.class);
 
 	public static void main(String[] args) {
 		SpringApplication.run(GoogleLocationsExtractorApplication.class, args);
@@ -56,22 +60,22 @@ public class GoogleLocationsExtractorApplication {
 		return args -> {
 			List<LocationsOutput> result = new LinkedList<LocationsOutput>();
 			
-			System.out.println("Chargement des date existantes");
+			logger.info("Chargement des date existantes");
 			loadExistingPlace();
-			System.out.println("Fin du chargement : "+existingDates.size()+" elements");
+			logger.info("Fin du chargement : "+existingDates.size()+" elements");
 			
 			Collection<File> listFiles = FileUtils.listFiles(srcFolder, new String[] {"json"}, true);
 			for (File file : listFiles) {
 				processFile(file, result);
 			}
 			
-			System.out.println("NB Ajout total : " + result.size());
+			logger.info("NB Ajout total : " + result.size());
 			for(int i=0;i<result.size();i++) {
-				System.out.println("Sauvegarde "+i+"/"+result.size());
+				logger.info("Sauvegarde "+i+"/"+result.size());
 				daoServices.save(result.get(i));
 			}
 			
-			System.out.println("Sauvegarde effectuee");
+			logger.info("Sauvegarde effectuee");
 		};
 	}
 
@@ -79,11 +83,11 @@ public class GoogleLocationsExtractorApplication {
 	private  void processFile(final File src, List<LocationsOutput> result) {
 		try {
 
-			System.out.println("Lecture du fichier "+src.getAbsolutePath());
+			logger.debug("Lecture du fichier "+src.getAbsolutePath());
 			String fileContent = FileUtils.readFileToString(src, Charset.defaultCharset());
 			Gson gson = new Gson();
 			LocationsInput fromJson = gson.fromJson(fileContent, LocationsInput.class);
-			System.out.println("Fichier Chargé, nb ligne : " + fromJson.getTimelineObjects().size());
+			logger.debug("Fichier Chargé, nb ligne : " + fromJson.getTimelineObjects().size());
 			for (TimelineObject input : fromJson.getTimelineObjects()) {
 				if (input.getPlaceVisit() != null) {
 					if (input.getPlaceVisit().getLocation().getName() != null) {
@@ -118,6 +122,7 @@ public class GoogleLocationsExtractorApplication {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+			logger.error("Erreur lors de la lecture du fichier source", e);
 		}
 	}
 
@@ -138,7 +143,7 @@ public class GoogleLocationsExtractorApplication {
 	public  List<Point> getDoNotTrackList() {
 		if(doNoTrackList==null) {
 			try {
-				System.out.println("Initialisation de la do not track list");
+				logger.debug("Initialisation de la do not track list");
 				List<String> readLines = FileUtils.readLines(ignoreFile,Charset.defaultCharset());
 				doNoTrackList=new ArrayList<Point>();
 				for (String line : readLines) {
@@ -153,9 +158,9 @@ public class GoogleLocationsExtractorApplication {
 			
 				return doNoTrackList;
 			} catch (IOException e) {
-				System.out.println("Fichier ignore specifie : "+ignoreFile.getAbsolutePath());
+				logger.error("Fichier ignore specifie : "+ignoreFile.getAbsolutePath(), e);
 				e.printStackTrace();
-				System.out.println("Liste ignoree par defaut : vide");
+				logger.info("Liste ignoree par defaut : vide");
 				doNoTrackList=new ArrayList<Point>();
 				return doNoTrackList;
 			}

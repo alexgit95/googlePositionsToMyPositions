@@ -43,6 +43,9 @@ public class GoogleLocationsExtractorApplication {
 	public File srcFolder;
 	@Autowired
 	private DaoServices daoServices;
+	
+	@Value("${radiusIgnoreZone}")
+	private int radiusIgnoreZone;
 
 	private Set<Date> existingDates = new TreeSet<Date>();
 
@@ -126,13 +129,13 @@ public class GoogleLocationsExtractorApplication {
 
 	}
 
-	public boolean shouldBeIgnore(double lat, double longi) {
-		final int distanceApprox = 500;
+	private boolean shouldBeIgnore(double lat, double longi) {
+		
 		List<Point> doNotTrackList = getDoNotTrackList();
 		for (Point point : doNotTrackList) {
 			double distance = distance(((double) point.getLatE7() / 10000000), lat,
 					((double) point.getLngE7() / 10000000), longi);
-			if (distance < distanceApprox) {
+			if (distance < radiusIgnoreZone) {
 				return true;
 			}
 
@@ -140,7 +143,7 @@ public class GoogleLocationsExtractorApplication {
 		return false;
 	}
 
-	public List<Point> getDoNotTrackList() {
+	private List<Point> getDoNotTrackList() {
 		if (doNoTrackList == null) {
 			try {
 				logger.debug("Initialisation de la do not track list");
@@ -168,6 +171,14 @@ public class GoogleLocationsExtractorApplication {
 			return doNoTrackList;
 		}
 	}
+	
+	private void loadExistingPlace() {
+		List<LocationsOutput> all = daoServices.getAll();
+
+		for (LocationsOutput location : all) {
+			existingDates.add(location.getBegin());
+		}
+	}
 
 	public static double distance(double lat1, double lat2, double lon1, double lon2) {
 		final int R = 6371; // Radius of the earth
@@ -185,12 +196,6 @@ public class GoogleLocationsExtractorApplication {
 		this.daoServices = daoServices;
 	}
 
-	private void loadExistingPlace() {
-		List<LocationsOutput> all = daoServices.getAll();
 
-		for (LocationsOutput location : all) {
-			existingDates.add(location.getBegin());
-		}
-	}
 
 }

@@ -1,146 +1,35 @@
 # googlePositionsToMyPositions
 
-Il faut recuperer depuis le fichier kml les données suivantes uniquement si Placemark/Point n'est pas nul (on ignore les LineString):
+Utiliser Google Takeout pour recuperer toutes vos données
 
-- Placemark/name
-- Placemark/address
-- Placemark/ExtendedData/Data@Category
-- Placemark/description
-- Placemark/Point/coordinates
-- Placemark/TimeSpan/begin
-- Placemark/TimeSpan/end
+https://takeout.google.com/settings/takeout
 
+Une fois l'archive recu et extraite vous pouvez creer un fichier application.properties :
 
-La creation des POJO a été effectuée avec xjc avec le bidings suivants :
+Exemple :
 
+```
+#chemin vers le fichier indiquant les endroits à ignorer lors de l'indexation
+ignoreFilePath=ignore file path
+#chemin vers le repertoire "Semantic Location History" où sont stockés les fichiers json
+sourceFolderPath=source folder
+#zone en metre autour des point ignores dans lesquels on ignore les points
+radiusIgnoreZone=600
 
 ```
 
-<jaxb:bindings
-    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
-    version="2.1">
-    <jaxb:globalBindings localScoping="toplevel"/>
-</jaxb:bindings>
+Puis il faut generer le fichier ignoreFilePath, il doit etre de la forme :
 
 ```
 
-sur
+47.1,2.1,libelle
+lattitude,longitude,libelle
+lattitude,longitude,libelle
 
 ```
 
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
-<xs:schema xmlns:gx="http://www.google.com/kml/ext/2.2" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.opengis.net/kml/2.2" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="kml">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="Document">
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element name="name" type="xs:string" />
-              <xs:element name="open" type="xs:unsignedByte" />
-              <xs:element name="description" />
-              <xs:element name="StyleMap">
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:element maxOccurs="unbounded" name="Pair">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="key" type="xs:string" />
-                          <xs:element name="styleUrl" type="xs:string" />
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                  </xs:sequence>
-                  <xs:attribute name="id" type="xs:string" use="required" />
-                </xs:complexType>
-              </xs:element>
-              <xs:element maxOccurs="unbounded" name="Style">
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:element name="IconStyle">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element minOccurs="0" name="scale" type="xs:decimal" />
-                          <xs:element name="Icon">
-                            <xs:complexType>
-                              <xs:sequence>
-                                <xs:element name="href" type="xs:string" />
-                              </xs:sequence>
-                            </xs:complexType>
-                          </xs:element>
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element name="LineStyle">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="color" type="xs:string" />
-                          <xs:element name="width" type="xs:unsignedByte" />
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                  </xs:sequence>
-                  <xs:attribute name="id" type="xs:string" use="required" />
-                </xs:complexType>
-              </xs:element>
-              <xs:element maxOccurs="unbounded" name="Placemark">
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:element name="name" type="xs:string" />
-                    <xs:element name="address" type="xs:string" />
-                    <xs:element name="ExtendedData">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element maxOccurs="unbounded" name="Data">
-                            <xs:complexType>
-                              <xs:sequence>
-                                <xs:element name="value" type="xs:string" />
-                              </xs:sequence>
-                              <xs:attribute name="name" type="xs:string" use="required" />
-                            </xs:complexType>
-                          </xs:element>
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element name="description" type="xs:string" />
-                    <xs:element minOccurs="0" name="LineString">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="altitudeMode" type="xs:string" />
-                          <xs:element name="extrude" type="xs:unsignedByte" />
-                          <xs:element name="tesselate" type="xs:unsignedByte" />
-                          <xs:element name="coordinates" type="xs:string" />
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element minOccurs="0" name="Point">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="coordinates" type="xs:string" />
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element name="TimeSpan">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="begin" type="xs:dateTime" />
-                          <xs:element name="end" type="xs:dateTime" />
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                  </xs:sequence>
-                </xs:complexType>
-              </xs:element>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>
+Chaque Ligne representant un endroit que l'on souhaite ne pas indexer.
 
-```
 
-et les inserer dasn DynamoDB Positions
+Pour finir on les inser dans DynamoDB, avant de les inserer on verifie qu'une entré n'existe pas deja, on
+peut donc fournir à chaque fois l'export complet de google sans creer de doublons.

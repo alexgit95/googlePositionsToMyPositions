@@ -156,7 +156,7 @@ public class GoogleLocationsExtractorApplication {
 					toAdd.setLngE7((int) (ignorePlace.getLongitude() * 10000000));
 					doNoTrackList.add(toAdd);
 				}
-				logger.debug(doNoTrackList.size()+" lieu seront ignore");
+				logger.info(doNoTrackList.size()+" lieu seront ignore");
 				
 				return doNoTrackList;
 			

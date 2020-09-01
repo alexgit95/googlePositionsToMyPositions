@@ -36,9 +36,9 @@ import alexgit95.batch.googleLocationsExtractor.services.DaoServices;
 public class GoogleLocationsExtractorApplication {
 
 	public static List<Point> doNoTrackList;
-
+/*
 	@Value("${ignoreFilePath}")
-	public File ignoreFile;
+	public File ignoreFile;*/
 
 	@Value("${sourceFolderPath}")
 	public File srcFolder;

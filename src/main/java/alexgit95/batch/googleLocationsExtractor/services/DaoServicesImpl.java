@@ -10,6 +10,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 
+import alexgit95.batch.googleLocationsExtractor.model.IgnorePlace;
 import alexgit95.batch.googleLocationsExtractor.model.LocationsOutput;
 
 @Component
@@ -32,6 +33,11 @@ public class DaoServicesImpl implements DaoServices {
 	public List<LocationsOutput> getAll() {
 		return mapper.scan(LocationsOutput.class, new DynamoDBScanExpression());
 		
+	}
+	
+	@Override
+	public List<IgnorePlace> getAllIgnorePlaces() {
+		return mapper.scan(IgnorePlace.class, new DynamoDBScanExpression());
 	}
 
 }

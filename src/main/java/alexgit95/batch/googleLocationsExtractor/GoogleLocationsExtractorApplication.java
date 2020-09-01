@@ -36,9 +36,6 @@ import alexgit95.batch.googleLocationsExtractor.services.DaoServices;
 public class GoogleLocationsExtractorApplication {
 
 	public static List<Point> doNoTrackList;
-/*
-	@Value("${ignoreFilePath}")
-	public File ignoreFile;*/
 
 	@Value("${sourceFolderPath}")
 	public File srcFolder;
@@ -160,18 +157,7 @@ public class GoogleLocationsExtractorApplication {
 					doNoTrackList.add(toAdd);
 				}
 				logger.debug(doNoTrackList.size()+" lieu seront ignore");
-				//Methode par lecture de fichier
-				/*List<String> readLines = FileUtils.readLines(ignoreFile, Charset.defaultCharset());
-					for (String line : readLines) {
-					String[] split = line.split(",");
-					Point toAdd = new Point();
-					int latE7 = (int) (Double.parseDouble(split[0]) * 10000000);
-					toAdd.setLatE7(latE7);
-					int lngE7 = (int) (Double.parseDouble(split[1]) * 10000000);
-					toAdd.setLngE7(lngE7);
-					doNoTrackList.add(toAdd);
-				}*/
-
+				
 				return doNoTrackList;
 			
 		} else {

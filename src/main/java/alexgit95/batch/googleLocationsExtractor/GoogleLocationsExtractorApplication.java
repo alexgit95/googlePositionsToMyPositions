@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 
 import com.google.gson.Gson;
 
+import alexgit95.batch.googleLocationsExtractor.model.IgnorePlace;
 import alexgit95.batch.googleLocationsExtractor.model.LocationsInput;
 import alexgit95.batch.googleLocationsExtractor.model.LocationsOutput;
 import alexgit95.batch.googleLocationsExtractor.model.Point;
@@ -35,9 +36,6 @@ import alexgit95.batch.googleLocationsExtractor.services.DaoServices;
 public class GoogleLocationsExtractorApplication {
 
 	public static List<Point> doNoTrackList;
-
-	@Value("${ignoreFilePath}")
-	public File ignoreFile;
 
 	@Value("${sourceFolderPath}")
 	public File srcFolder;
@@ -145,28 +143,23 @@ public class GoogleLocationsExtractorApplication {
 
 	private List<Point> getDoNotTrackList() {
 		if (doNoTrackList == null) {
-			try {
+		
+				
 				logger.debug("Initialisation de la do not track list");
-				List<String> readLines = FileUtils.readLines(ignoreFile, Charset.defaultCharset());
 				doNoTrackList = new ArrayList<Point>();
-				for (String line : readLines) {
-					String[] split = line.split(",");
+				
+				
+				List<IgnorePlace> allIgnorePlaces = daoServices.getAllIgnorePlaces();
+				for (IgnorePlace ignorePlace : allIgnorePlaces) {
 					Point toAdd = new Point();
-					int latE7 = (int) (Double.parseDouble(split[0]) * 10000000);
-					toAdd.setLatE7(latE7);
-					int lngE7 = (int) (Double.parseDouble(split[1]) * 10000000);
-					toAdd.setLngE7(lngE7);
+					toAdd.setLatE7((int) (ignorePlace.getLattitude() * 10000000));
+					toAdd.setLngE7((int) (ignorePlace.getLongitude() * 10000000));
 					doNoTrackList.add(toAdd);
 				}
-
+				logger.info(doNoTrackList.size()+" lieu seront ignore");
+				
 				return doNoTrackList;
-			} catch (IOException e) {
-				logger.error("Fichier ignore specifie : " + ignoreFile.getAbsolutePath(), e);
-				e.printStackTrace();
-				logger.info("Liste ignoree par defaut : vide");
-				doNoTrackList = new ArrayList<Point>();
-				return doNoTrackList;
-			}
+			
 		} else {
 			return doNoTrackList;
 		}

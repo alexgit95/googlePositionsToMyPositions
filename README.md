@@ -22,3 +22,12 @@ Le projet prend en compte des ignorePlaces qui sont configurées dans une table 
 Pour finir on les insere dans DynamoDB, avant de les inserer on verifie qu'une entrée n'existe pas deja. 
 
 On peut donc fournir à chaque fois l'export complet de google sans creer de doublons.
+
+Pour lancer le programme : 
+
+```
+
+java -jar .\googleLocationsExtractor-0.0.1-SNAPSHOT.jar --spring.config.location=C:\path\application.properties
+
+```
+

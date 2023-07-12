@@ -6,10 +6,10 @@ import com.google.gson.annotations.SerializedName;
 
 public class Duration_ {
 
-    @SerializedName("startTimestampMs")
+    @SerializedName("startTimestamp")
     @Expose
     private String startTimestampMs;
-    @SerializedName("endTimestampMs")
+    @SerializedName("endTimestamp")
     @Expose
     private String endTimestampMs;
 

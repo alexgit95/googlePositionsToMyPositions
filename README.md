@@ -31,3 +31,6 @@ java -jar .\googleLocationsExtractor-0.0.1-SNAPSHOT.jar --spring.config.location
 
 ```
 
+Exemple de fichier ignore.csv :
+maison;48.1;2.555555
+bretoncelles;48.6666666;0.25555

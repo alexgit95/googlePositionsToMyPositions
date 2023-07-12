@@ -1,16 +1,12 @@
 package alexgit95.batch.googleLocationsExtractor;
 
-import java.io.File;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import alexgit95.batch.googleLocationsExtractor.services.FileServices;
-import org.apache.commons.io.FileUtils;
+import alexgit95.batch.googleLocationsExtractor.services.OrchestratorServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,17 +18,8 @@ import alexgit95.batch.googleLocationsExtractor.dao.entities.LocationsOutput;
 @SpringBootApplication
 public class GoogleLocationsExtractorApplication {
 
-
-
-	@Value("${sourceFolderPath}")
-	public File srcFolder;
-
 	@Autowired
-	private FileServices fileServices;
-
-
-
-
+	private OrchestratorServices orchestratorServices;
 
 	private Logger logger = LoggerFactory.getLogger(GoogleLocationsExtractorApplication.class);
 
@@ -46,17 +33,19 @@ public class GoogleLocationsExtractorApplication {
 		return args -> {
 			List<LocationsOutput> result = new LinkedList<LocationsOutput>();
 
-			fileServices.getIgnorePlaceFromFile();
+			//Recupere la liste des ignores places à ajouter dans la base des ignore places
+			orchestratorServices.getIgnorePlaceFromFile();
 
-			fileServices.loadExistingPlace();
+			//Rceupere toutes les endrots qui sont deja stocké en BDD
+			orchestratorServices.loadExistingPlace();
 
 
-			Collection<File> listFiles = FileUtils.listFiles(srcFolder, new String[] { "json" }, true);
-			for (File file : listFiles) {
-				fileServices.processFile(file, result);
-			}
+			//Recupere tous les endroits depuis l'historique google
+			// en ne prenant pas ceux qui existe deja à une date donnee
+			orchestratorServices.processGoogleFiles(result);
 
-			fileServices.saveAll(result);
+			//Sauvegarde des nouveau elements
+			orchestratorServices.saveAll(result);
 			logger.info("Fin du programme");
 		};
 	}

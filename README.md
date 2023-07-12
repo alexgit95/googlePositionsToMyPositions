@@ -10,6 +10,7 @@ Exemple :
 
 ```
 
+ignoreFilePath=C:\\TakeOut\\ignore.csv
 #chemin vers le repertoire "Semantic Location History" où sont stockés les fichiers json
 sourceFolderPath=source folder
 #zone en metre autour des point ignores dans lesquels on ignore les points
@@ -32,5 +33,10 @@ java -jar .\googleLocationsExtractor-0.0.1-SNAPSHOT.jar --spring.config.location
 ```
 
 Exemple de fichier ignore.csv :
+
+```
+
 maison;48.1;2.555555
-bretoncelles;48.6666666;0.25555
+travail;48.6666666;0.25555
+
+```

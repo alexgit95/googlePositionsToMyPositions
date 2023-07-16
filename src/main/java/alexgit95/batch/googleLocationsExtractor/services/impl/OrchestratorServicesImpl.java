@@ -27,10 +27,13 @@ public class OrchestratorServicesImpl implements OrchestratorServices {
 
     private static Set<Date> existingDates = new TreeSet<Date>();
 
-
+    @Value("${minimumMinuteToBeStore}")
+    private int minimumMinuteToBeStore;
     @Value("${radiusIgnoreZone}")
     private int radiusIgnoreZone;
 
+    @Value("${jsonOutputFile}")
+    private String jsonOutputFilePath;
     @Value("${ignoreFilePath}")
     private String ignoreFilePath;
     @Value("${sourceFolderPath}")
@@ -66,11 +69,12 @@ public class OrchestratorServicesImpl implements OrchestratorServices {
                     LocationsOutput output = outputBuilder(input);
                     Calendar cal = Calendar.getInstance();
                     cal.setTime(output.getBegin());
-                    cal.add(Calendar.MINUTE, 30);
+                    cal.add(Calendar.MINUTE, minimumMinuteToBeStore);
 
                     if (output.getEnd().after(cal.getTime())
                             && !shouldBeIgnore(output.getLattitude(), output.getLongitude())
-                            && !existingDates.contains(output.getBegin())) {
+                          //TODO a garder?? plus idempotent  && !existingDates.contains(output.getBegin())
+                    ) {
                         result.add(output);
 
                     }
@@ -117,6 +121,20 @@ public class OrchestratorServicesImpl implements OrchestratorServices {
         }catch(Exception e){
             logger.error("Erreur lors de la recuperation des ignore place depuis le fichier ", e);
         }
+    }
+
+    public void generateAllLocationJson(){
+
+        List<LocationsOutput> all = daoServices.getAll();
+        Gson gson = new Gson();
+        File output = new File(jsonOutputFilePath);
+        try {
+            FileUtils.write(output, "var locations="+gson.toJson(all),Charset.defaultCharset());
+        } catch (IOException e) {
+            logger.error("Erreur lors de l'ecriture du fichier JS", e);
+        }
+
+
     }
 
 

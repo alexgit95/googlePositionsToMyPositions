@@ -46,6 +46,8 @@ public class GoogleLocationsExtractorApplication {
 
 			//Sauvegarde des nouveau elements
 			orchestratorServices.saveAll(result);
+
+			orchestratorServices.generateAllLocationJson();
 			logger.info("Fin du programme");
 		};
 	}

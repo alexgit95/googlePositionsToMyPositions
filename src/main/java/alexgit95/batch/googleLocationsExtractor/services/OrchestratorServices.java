@@ -15,4 +15,6 @@ public interface OrchestratorServices {
     void loadExistingPlace();
 
     void getIgnorePlaceFromFile();
+
+    void generateAllLocationJson();
 }
